@@ -67,14 +67,22 @@ namespace Balls
             e.Context.View = Matrix4.CreateTranslation(-offset.X, offset.Y);
             e.Context.Model = Matrix.Identity;
             
+            
             _phm.IterateBalls(b =>
             {
                 e.Context.Render(b);
             });
+            /*_phm.IterateGrid((g, l) =>
+            {
+                for (int i = 0; i < g.Count; i++)
+                {
+                    e.Context.DrawEllipse(new Box(l, g[i].Radius), g[i].Colour);
+                }
+            });*/
             
             e.Context.View = Matrix.Identity;
             e.Context.Model = Matrix4.CreateScale(10d);
-            //TR.DrawCentred(e.Context, $"{_phm.Time * 1000d}\n{_phm.Count}", SampleFont.GetInstance(), 0, 0);
+            TR.DrawCentred(e.Context, $"{_phm.Time * 1000d}\n{_phm.Count}", SampleFont.GetInstance(), 0, 0);
         }
         
         /*
@@ -170,7 +178,6 @@ namespace Balls
         {
             base.OnSizeChange(e);
             
-            //_bounds = new Box(Vector2.Zero, e.Value);
             Actions.Push(() =>
             {
                 Vector2 offset = Location + (e.Value * 0.5);
@@ -198,29 +205,12 @@ namespace Balls
         {
             _phm.AddBall(new Ball(
                 location,
-                _random.NextDouble(2d, 20d),
+                _random.NextDouble(2d, 10d),
                 _random.NextVector2(-5d, 5d),
                 _random.NextColourF()
             ));
         }
         
-        protected override void OnMouseDown(MouseEventArgs e)
-        {
-            base.OnMouseDown(e);
-            
-            Vector2 location = e.Location - (Size * 0.5);
-            
-            if (e.Button == MouseButton.Left)
-            {
-                //AddBall(location);
-                return;
-            }
-            if (e.Button == MouseButton.Right)
-            {
-                _phm.RemoveAt(location);
-                return;
-            }
-        }
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);

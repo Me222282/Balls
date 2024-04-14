@@ -4,6 +4,7 @@ using Zene.Graphics;
 using Zene.Windowing;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace Balls
 {
@@ -13,10 +14,10 @@ namespace Balls
         {
             public Cell(bool temp)
             {
-                Objects = new IterableList<Ball>();
+                Objects = new List<Ball>(8);
             }
             
-            public IterableList<Ball> Objects;
+            public List<Ball> Objects;
             
             public void Add(Ball b) => Objects.Add(b);
             public void Remove(Ball b) => Objects.Remove(b);
@@ -60,7 +61,7 @@ namespace Balls
             
             public void Add(Ball b, Vector2I pos)
             {
-                if (pos.X >= _grid.GetLength(1) ||
+                if (b == null || pos.X >= _grid.GetLength(1) ||
                     pos.Y >= _grid.GetLength(0) ||
                     pos.X < 0 ||
                     pos.Y < 0)
@@ -72,7 +73,7 @@ namespace Balls
             }
             public void Remove(Ball b, Vector2I pos)
             {
-                if (pos.X >= _grid.GetLength(1) ||
+                if (b == null || pos.X >= _grid.GetLength(1) ||
                     pos.Y >= _grid.GetLength(0) ||
                     pos.X < 0 ||
                     pos.Y < 0)
@@ -89,11 +90,9 @@ namespace Balls
             SetFrameSize(size);
         }
         
-        public int Threads { get; set; } = 10;
-        
         public double Gravity { get; set; } = 1000d;
         
-        public double GridSize { get; } = 80d;
+        public double GridSize { get; } = 10d;
         public Vector2 FrameSize { get; private set; }
         private Grid _grid;
         
@@ -297,16 +296,39 @@ namespace Balls
             Parallel.For(0, l, a =>
             {
                 Ball b1 = _balls[a];
+                // Vector2I gp = GetGridLocation(b1.Location);
+                
+                // // All neighbouring lists
+                // Iterate(b1, _grid[gp.X, gp.Y].Objects);
+                // Iterate(b1, _grid[gp.X + 1, gp.Y].Objects);
+                // Iterate(b1, _grid[gp.X - 1, gp.Y].Objects);
+                // Iterate(b1, _grid[gp.X, gp.Y + 1].Objects);
+                // Iterate(b1, _grid[gp.X, gp.Y - 1].Objects);
+                // Iterate(b1, _grid[gp.X + 1, gp.Y + 1].Objects);
+                // Iterate(b1, _grid[gp.X - 1, gp.Y + 1].Objects);
+                // Iterate(b1, _grid[gp.X + 1, gp.Y - 1].Objects);
+                // Iterate(b1, _grid[gp.X - 1, gp.Y - 1].Objects);
                 
                 for (int b = a + 1; b < l; b++)
                 {
                     Ball b2 = _balls[b];
                     
-                    //if (b1 == b2) { continue; }
-                    
                     ResolveCollision(b1, b2);
                 }
             });
+        }
+        private void Iterate(Ball b1, List<Ball> bs)
+        {
+            if (bs is null) { return; }
+            ReadOnlySpan<Ball> span = CollectionsMarshal.AsSpan<Ball>(bs);
+            for (int b = 0; b < span.Length; b++)
+            {
+                Ball b2 = _balls[b];
+                
+                if (b1 == b2) { continue; }
+                
+                ResolveCollision(b1, b2);
+            }
         }
         private void ResolveCollision(Ball a, Ball b)
         {
@@ -341,22 +363,18 @@ namespace Balls
         
         public void SetLocation(Ball b, Vector2 location)
         {
-            if (double.IsNaN(location.X) || double.IsNaN(location.Y))
-            {
-                throw new Exception();
-            }
-            
-            //Vector2I gridPosOld = GetGridLocation(b.Location);
-            //Vector2I gridPosNew = GetGridLocation(location);
+            // Vector2I gridPosOld = GetGridLocation(b.Location);
+            // Vector2I gridPosNew = GetGridLocation(location);
             b.Location = location;
             
-            //if (gridPosOld == gridPosNew) { return; }
+            // if (gridPosOld == gridPosNew) { return; }
             
-            //_grid.Remove(b, gridPosOld);
-            //_grid.Add(b, gridPosNew);
+            // _grid.Remove(b, gridPosOld);
+            // _grid.Add(b, gridPosNew);
         }
         
-        public Vector2I GetGridLocation(Vector2 location) => (Vector2I)((location + (FrameSize * 0.5)) / GridSize);
+        public Vector2I GetGridLocation(Vector2 location) => (Vector2I)((location - _bounds.Location + (FrameSize * 0.5)) / GridSize);
+        public Vector2 GetLocation(Vector2I gp) => (gp * GridSize) - (FrameSize * 0.5) + _bounds.Location;
         
         public void AddBall(Ball b)
         {
@@ -366,8 +384,8 @@ namespace Balls
             }
             
             _balls.Add(b);
-            //Vector2I gridPos = GetGridLocation(b.Location);
-            //_grid.Add(b, gridPos);
+            // Vector2I gridPos = GetGridLocation(b.Location);
+            // _grid.Add(b, gridPos);
         }
         public bool RemoveBall(Ball b)
         {
@@ -376,8 +394,8 @@ namespace Balls
                 return false;
             }
             
-            //Vector2I gridPos = GetGridLocation(b.Location);
-            //_grid.Remove(b, gridPos);
+            // Vector2I gridPos = GetGridLocation(b.Location);
+            // _grid.Remove(b, gridPos);
             
             return true;
         }
@@ -392,8 +410,8 @@ namespace Balls
                 if (b.Location.SquaredDistance(framePos) < (b.Radius * b.Radius))
                 {
                     _balls.RemoveAt(i);
-                    //Vector2I gridPos = GetGridLocation(b.Location);
-                    //_grid.Remove(b, gridPos);
+                    // Vector2I gridPos = GetGridLocation(b.Location);
+                    // _grid.Remove(b, gridPos);
                     return;
                 }
             }
@@ -405,6 +423,17 @@ namespace Balls
             for (int i = 0; i < l; i++)
             {
                 action(_balls[i]);
+            }
+        }
+        public void IterateGrid(Action<List<Ball>, Vector2> action)
+        {
+            Vector2I s = _grid.Size;
+            for (int x = 0; x < s.X; x++)
+            {
+                for (int y = 0; y < s.Y; y++)
+                {
+                    action(_grid[x, y].Objects, GetLocation((x, y)));
+                }
             }
         }
     }
