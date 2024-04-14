@@ -23,6 +23,7 @@ namespace Balls
             : base(width, height, title, 4.3, true)
         {
             _random = new Random();
+            _phm = new PhysicsManager((width, height));
             
             double hw = width * 0.5;
             double hh = height * 0.5;
@@ -36,50 +37,47 @@ namespace Balls
         }
         
         private Random _random;
-        private Box _bounds;
-        private List<Ball> _balls = new List<Ball>();
-        public double Gravity { get; set; } = 30d;
-        public double Friction { get; set; } = 0.95;
+        private PhysicsManager _phm;
         
         public static TextRenderer TR;
         private bool _paused = false;
         
-        private double _frameTime;
-        private int _frameCounter = 0;
         protected override void OnUpdate(FrameEventArgs e)
         {
-            _frameCounter++;
-            _frameTime = Timer;
-            Timer = 0d;
+            Vector2 offset = Location + (Size * 0.5);
             
             if (this[MouseButton.Right])
             {
-                RemoveBall(MouseLocation - (Size * 0.5));
+                _phm.RemoveAt(MouseLocation - (Size * 0.5) + (offset.X, -offset.Y));
             }
-            else if (_frameCounter >= 5 && this[MouseButton.Left])
+            else if (this[MouseButton.Left])
             {
-                _frameCounter = 0;
-                AddBall(MouseLocation - (Size * 0.5));
+                AddBall(MouseLocation - (Size * 0.5) + (offset.X, -offset.Y));
             }
             
             base.OnUpdate(e);
             
             if (!_paused)
             {
-                CalculatePhysics();
+                _phm.ApplyPhysics(1d / 60d, 8);
+                //_phm.ApplyPhysics(1d / 60d);
             }
             
             e.Context.Framebuffer.Clear(BufferBit.Colour);
-            DrawManager.View = Matrix.Identity;
-            DrawManager.Model = Matrix.Identity;
+            e.Context.View = Matrix4.CreateTranslation(-offset.X, offset.Y);
+            e.Context.Model = Matrix.Identity;
             
-            int l = _balls.Count;
-            for (int i = 0; i < l; i++)
+            _phm.IterateBalls(b =>
             {
-                e.Context.Render(_balls[i]);
-            }
+                e.Context.Render(b);
+            });
+            
+            e.Context.View = Matrix.Identity;
+            e.Context.Model = Matrix4.CreateScale(10d);
+            //TR.DrawCentred(e.Context, $"{_phm.Time * 1000d}\n{_phm.Count}", SampleFont.GetInstance(), 0, 0);
         }
         
+        /*
         private Vector2 Reflect(Vector2 dir, Radian lineAngle)
         {
             Radian dirA = Math.Atan2(dir.Y, dir.X);
@@ -89,59 +87,6 @@ namespace Balls
                 Math.Cos(newA),
                 Math.Sin(newA)
             );
-        }
-        
-        private void CalculatePhysics()
-        {
-            ApplyGravity();
-            
-            int l = _balls.Count;
-            Parallel.For(0, l, (i) =>
-            {
-                Ball a = _balls[i];
-                
-                for (int c = 0; c < l; c++)
-                {
-                    if (c == i) { continue; }
-                    
-                    Ball b = _balls[c];
-                    
-                    if (DetermineColision(a, b))
-                    {
-                        ResolveCollision(a, b);
-                    }
-                }
-            });
-            /*
-            for (int i = 0; i < l; i++)
-            {
-                Ball a = _balls[i];
-                
-                for (int c = 0; c < l; c++)
-                {
-                    if (c == i) { continue; }
-                    
-                    Ball b = _balls[c];
-                    
-                    if (DetermineColision(a, b))
-                    {
-                        ResolveCollision(a, b);
-                    }
-                }
-            }*/
-        }
-        private void ApplyGravity()
-        {
-            int l = _balls.Count;
-            for (int i = 0; i < l; i++)
-            {
-                Ball b = _balls[i];
-                
-                b.Velocity -= (0d, Gravity);
-                b.Location += b.Velocity * _frameTime;
-                
-                ClampToBounds(b);
-            }
         }
         private void ClampToBounds(Ball b)
         {
@@ -175,11 +120,6 @@ namespace Balls
             
             b.Location = l;
         }
-        private bool DetermineColision(Ball a, Ball b)
-        {
-            double min = a.Radius + b.Radius;
-            return a.Location.SquaredDistance(b.Location) < (min * min);
-        }
         
         private void ResolveCollision(Ball a, Ball b)
         {
@@ -201,6 +141,15 @@ namespace Balls
             //double momentum = (a.Velocity.Length * a.Mass) + (b.Velocity.Length * b.Mass);
             //double magnitude = momentum * Friction * 0.5;
             
+            if (HeadAway(a, b))
+            {
+                aDir = -aDir;
+            }
+            if (HeadAway(b, a))
+            {
+                bDir = -bDir;
+            }
+            
             a.Location -= offset;
             //a.Velocity = -a.Velocity * Friction;
             //a.Velocity = aDir * (magnitude / a.Mass);
@@ -210,43 +159,49 @@ namespace Balls
             //b.Velocity = bDir * (magnitude / b.Mass);
             b.Velocity = bDir * b.Velocity.Length * Friction;
         }
-        
         private static double Fold(double value, double fold) => fold - (value - fold);
-        
+        private static bool HeadAway(Ball a, Ball b)
+        {
+            return a.Location.SquaredDistance(b.Location) <
+                (a.Location + a.Velocity).SquaredDistance(b.Location);
+        }
+        */
         protected override void OnSizeChange(VectorIEventArgs e)
         {
             base.OnSizeChange(e);
             
-            _bounds = new Box(Vector2.Zero, e.Value);
-            DrawManager.Projection = Matrix4.CreateOrthographic(e.X, e.Y, 0d, 1d);
+            //_bounds = new Box(Vector2.Zero, e.Value);
+            Actions.Push(() =>
+            {
+                Vector2 offset = Location + (e.Value * 0.5);
+                offset.Y = -offset.Y;
+                _phm.SetBoundPos(offset);
+                _phm.SetFrameSize(e.Value);
+            });
+            
+            DrawContext.Projection = Matrix4.CreateOrthographic(e.X, e.Y, 0d, 1d);
         }
-        
+        protected override void OnWindowMove(VectorIEventArgs e)
+        {
+            base.OnWindowMove(e);
+            
+            Vector2 offset = e.Value + (Size * 0.5);
+            offset.Y = -offset.Y;
+            
+            Actions.Push(() =>
+            {
+                _phm.SetBoundPos(offset);
+            });
+        }
+
         public void AddBall(Vector2 location)
         {
-            _balls.Add(new Ball(
+            _phm.AddBall(new Ball(
                 location,
                 _random.NextDouble(2d, 20d),
-                _random.NextVector2(-1000d, 1000d),
+                _random.NextVector2(-5d, 5d),
                 _random.NextColourF()
             ));
-        }
-        public void RemoveBall(Vector2 location)
-        {   
-            int l = _balls.Count;
-            for (int i = 0; i < l; i++)
-            {
-                Ball b = _balls[i];
-                
-                // Inside circle
-                if (b.Location.SquaredDistance(location) < (b.Radius * b.Radius))
-                {
-                    Actions.Push(() =>
-                    {
-                        _balls.RemoveAt(i);
-                    });
-                    return;
-                }
-            }
         }
         
         protected override void OnMouseDown(MouseEventArgs e)
@@ -257,12 +212,12 @@ namespace Balls
             
             if (e.Button == MouseButton.Left)
             {
-                AddBall(location);
+                //AddBall(location);
                 return;
             }
             if (e.Button == MouseButton.Right)
             {
-                RemoveBall(location);
+                _phm.RemoveAt(location);
                 return;
             }
         }

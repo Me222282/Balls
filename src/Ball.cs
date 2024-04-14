@@ -26,21 +26,29 @@ namespace Balls
         {
             Colour = colour;
             Location = location;
-            Velocity = velocity;
+            _oldPos = location - velocity;
             Radius = radius;
         }
         
         public ColourF Colour { get; set; }
-        public Vector2 Location { get; set; }
-        public Vector2 Velocity { get; set; }
+        public Vector2 Location { get; internal set; }
+        private Vector2 _oldPos;
+        public Vector2 Velocity => Location - _oldPos;
+        public Vector2 Acceleration { get; set; }
         public double Radius { get; set; }
-        public double Mass { get; set; } = 1d;
+        
+        internal Vector2 OldLocation => _oldPos;
         
         public void OnRender(IDrawingContext context)
         {
-            DrawManager dm = (DrawManager)context;
-            
             context.DrawEllipse(new Box(Location, Radius * 2d), Colour);
+        }
+        
+        public void ApplyVerlet(double dt)
+        {
+            Vector2 vel = Velocity;
+            _oldPos = Location;
+            Location += vel + (Acceleration * dt * dt);
         }
     }
 }
