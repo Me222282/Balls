@@ -278,22 +278,20 @@ namespace Balls
         private void CalculateCollisions()
         {
             int l = _balls.Count;
-            /*
-            for (int a = 0; a < l; a++)
-            {
-                Ball b1 = _balls[a];
-                
-                for (int b = 0; b < l; b++)
-                {
-                    Ball b2 = _balls[b];
-                    
-                    if (b1 == b2) { continue; }
-                    
-                    ResolveCollision(b1, b2);
-                }
-            }*/
             
-            Parallel.For(0, l, a =>
+            // for (int a = 0; a < l; a++)
+            // {
+            //     Ball b1 = _balls[a];
+                
+            //     for (int b = a + 1; b < l; b++)
+            //     {
+            //         Ball b2 = _balls[b];
+                    
+            //         ResolveCollision(b1, b2);
+            //     }
+            // }
+            // return;
+            Program.ParallelFor(l, 8, a =>
             {
                 Ball b1 = _balls[a];
                 // Vector2I gp = GetGridLocation(b1.Location);

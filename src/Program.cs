@@ -9,6 +9,49 @@ namespace Balls
 {
     class Program : Window
     {
+        public static void ParallelFor(int range, int threads, Action<int> action)
+        {
+            Span<int> lengths = stackalloc int[threads];
+            int baseSize = range / threads;
+            int extras = range % threads;
+            for (int i = 0; i < threads; i++)
+            {
+                lengths[i] = baseSize;
+                if (extras > 0)
+                {
+                    lengths[i]++;
+                    extras--;
+                }
+            }
+            
+            Task[] tasks = new Task[threads];
+            
+            int current = lengths[0];
+            for (int i = 1; i < threads; i++)
+            {
+                int c = current;
+                int l = lengths[i] + c;
+                current = l;
+                tasks[i] = Task.Run(() =>
+                {
+                    for (int j = c; j < l; j++)
+                    {
+                        action(j);
+                    }
+                });
+            }
+            
+            for (int j = 0; j < lengths[0]; j++)
+            {
+                action(j);
+            }
+            
+            for (int i = 1; i < threads; i++)
+            {
+                tasks[i].Wait();
+            }
+        }
+        
         static void Main(string[] args)
         {
             Core.Init();
@@ -59,7 +102,7 @@ namespace Balls
             
             if (!_paused)
             {
-                _phm.ApplyPhysics(1d / 60d, 8);
+                _phm.ApplyPhysics(1d / 60d, 4);
                 //_phm.ApplyPhysics(1d / 60d);
             }
             
