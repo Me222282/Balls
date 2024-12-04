@@ -107,7 +107,7 @@ namespace Balls
             }
             
             e.Context.Framebuffer.Clear(BufferBit.Colour);
-            e.Context.View = Matrix4.CreateTranslation(-offset.X, offset.Y);
+            e.Context.View = Matrix4.CreateTranslation(-_phm.Centre);
             e.Context.Model = Matrix.Identity;
             
             

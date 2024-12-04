@@ -88,15 +88,19 @@ namespace Balls
         public PhysicsManager(Vector2 size)
         {
             SetFrameSize(size);
+            _newPos = 0d;
+            SetFrame(size, 0d);
         }
         
         public double Gravity { get; set; } = 1000d;
         
         public double GridSize { get; } = 10d;
         public Vector2 FrameSize { get; private set; }
+        public Vector2 Centre => _bounds.Centre;
         private Grid _grid;
         
         private Box _bounds;
+        private Vector2 _newPos;
         private List<Ball> _balls = new List<Ball>();
         
         internal Ball F => _balls[0];
@@ -104,11 +108,13 @@ namespace Balls
         public double Time { get; private set; }
         public int Count => _balls.Count;
         
-        public void SetFrameSize(Vector2 size)
+        public void SetFrameSize(Vector2 size) => FrameSize = size;
+        private void SetFrame(Vector2 size, Vector2 pos)
         {
-            FrameSize = size;
-            _bounds = new Box(_bounds.Location, size);
+            // FrameSize = size;
+            _bounds = new Box(pos, size);
             size /= GridSize;
+            return;
             
             _grid = new Grid(new Vector2I(
                 Math.Ceiling(size.X),
@@ -123,10 +129,7 @@ namespace Balls
                 _grid.Add(b, GetGridLocation(b.Location));
             }
         }
-        public void SetBoundPos(Vector2 pos)
-        {
-            _bounds.Centre = pos;
-        }
+        public void SetBoundPos(Vector2 pos) => _newPos = pos;
         
         public void ApplyPhysics(double dt, int subStep)
         {
@@ -134,14 +137,23 @@ namespace Balls
             
             dt /= subStep;
             
+            Vector2 changeS = (FrameSize - _bounds.Size) / subStep;
+            Vector2 changeP = (_newPos - _bounds.Centre) / subStep;
+            bool change = changeS != 0 || changeP != 0;
+            
             for (int i = 0; i < subStep; i++)
             {
+                if (change)
+                {
+                    SetFrame(_bounds.Size + changeS,
+                        _bounds.Centre + changeP);
+                }
                 ApplyPhysics(dt);
             }
             
             Time = Core.Time - t;
         }
-        public void ApplyPhysics(double dt)
+        private void ApplyPhysics(double dt)
         {
             PreCollisionPhsyics();
             CalculateCollisions();
