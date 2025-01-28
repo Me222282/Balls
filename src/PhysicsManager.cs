@@ -95,7 +95,6 @@ namespace Balls
             {
                 Ball b = _balls[i];
                 b.ApplyVerlet(dt);
-                // continue;
             }
         }
         
@@ -137,60 +136,16 @@ namespace Balls
             if (l == b.Location) { return; }
             
             b.Location = l;
-            // SetLocation(b, l);
         }
         
         private unsafe void CalculateCollisions()
         {
             int l = _balls.Count;
             
-            // for (int a = 0; a < l; a++)
-            // {
-            //     Ball b1 = _balls[a];
-                
-            //     for (int b = a + 1; b < l; b++)
-            //     {
-            //         Ball b2 = _balls[b];
-                    
-            //         ResolveCollision(b1, b2);
-            //     }
-            // }
-            // return;
             Program.ParallelFor(l, 1, a =>
             {
                 Ball b1 = _balls[a];
                 Box box = new Box(b1.Location, b1.Radius * 2d);
-                // Vector2I gp = GetGridLocation(b1.Location);
-                
-                // Vector2 v = b1.Velocity;
-                // Vector2I vI = ((int)Math.Ceiling(Math.Abs(v.X) * _gsR),
-                //     (int)Math.Ceiling(Math.Abs(v.Y) * _gsR));
-                // if (vI.X > vI.Y) { vI.Y += vI.Y; }
-                // else { vI.X += vI.X; }
-                
-                // Span<Vector2I> chunks = stackalloc Vector2I[vI.X + vI.Y];
-                
-                // int l = Cast(gp, v, chunks);
-                // for (int i = 0; i < l; i++)
-                // {
-                //     Vector2I cp = chunks[i];
-                //     Vector2 p = GetLocation(cp) + (GridSize * 0.5);
-                //     Program.DC.DrawBorderBox(
-                //         new Box(p, GridSize), ColourF.Zero, 2d, b1.Colour, 0d
-                //     );
-                //     Iterate(b1, _grid[cp.X, cp.Y]);
-                // }
-                
-                // All neighbouring lists
-                // Iterate(b1, _grid[gp.X, gp.Y]);
-                // Iterate(b1, _grid[gp.X + 1, gp.Y]);
-                // Iterate(b1, _grid[gp.X - 1, gp.Y]);
-                // Iterate(b1, _grid[gp.X, gp.Y + 1]);
-                // Iterate(b1, _grid[gp.X, gp.Y - 1]);
-                // Iterate(b1, _grid[gp.X + 1, gp.Y + 1]);
-                // Iterate(b1, _grid[gp.X - 1, gp.Y + 1]);
-                // Iterate(b1, _grid[gp.X + 1, gp.Y - 1]);
-                // Iterate(b1, _grid[gp.X - 1, gp.Y - 1]);
                 
                 Vector2I c1 = GetGridLocation((box.Left, box.Top));
                 Vector2I c2 = GetGridLocation((box.Right, box.Top));
@@ -223,11 +178,6 @@ namespace Balls
         {
             if (!_grid.Contains(p)) { return; }
             FastList<Ball> bs = _grid[p.X, p.Y];
-            
-            // Vector2 sp = GetLocation(p) + (GridSize * 0.5);
-            // Program.DC.DrawBorderBox(
-            //     new Box(sp, GridSize), ColourF.Zero, 2d, b1.Colour, 0d
-            // );
             
             ReadOnlySpan<Ball> span = bs.AsSpan();
             for (int b = 0; b < span.Length; b++)
@@ -348,56 +298,5 @@ namespace Balls
         //         }
         //     }
         // }
-        
-        public int Cast(Vector2I location, Vector2 change, Span<Vector2I> data)
-        {
-            int index = 0;
-            Grid grid = _grid;
-            double dv;
-            Vector2I lastPos = location;
-            
-            // by x
-            if (change.X > change.Y)
-            {
-                dv = change.Y / change.X;
-                for (double x = 0; x < change.X; x += GridSize)
-                {
-                    Vector2 offset = (x, dv * x);
-                    Vector2I pos = location + (Vector2I)(offset * _gsR);
-                    if (lastPos.Y != pos.Y)
-                    {
-                        data[index] = (pos.X, lastPos.Y);
-                        index++;
-                        data[index] = (lastPos.X, pos.Y);
-                        index++;
-                    }
-                    lastPos = pos;
-                    
-                    data[index] = pos;
-                    index++;
-                }
-                return index;
-            }
-            
-            // by y
-            dv = change.X / change.Y;
-            for (double y = 0; y < change.Y; y += GridSize)
-            {
-                Vector2 offset = (dv * y, y);
-                Vector2I pos = location + (Vector2I)(offset * _gsR);
-                if (lastPos.X != pos.X)
-                {
-                    data[index] = (pos.X, lastPos.Y);
-                    index++;
-                    data[index] = (lastPos.X, pos.Y);
-                    index++;
-                }
-                lastPos = pos;
-                
-                data[index] = pos;
-                index++;
-            }
-            return index;
-        }
     }
 }
