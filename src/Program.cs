@@ -52,11 +52,14 @@ namespace Balls
             }
         }
         
+        public static DrawContext DC;
+        
         static void Main(string[] args)
         {
             Core.Init();
             
             Window w = new Program(800, 500, "WORK");
+            DC = w.DrawContext;
             w.RunMultithread();
             
             Core.Terminate();
@@ -103,120 +106,25 @@ namespace Balls
             if (!_paused)
             {
                 _phm.ApplyPhysics(1d / 60d, 4);
-                //_phm.ApplyPhysics(1d / 60d);
+                // _phm.ApplyPhysics(1d / 60d, 1);
             }
             
             e.Context.Framebuffer.Clear(BufferBit.Colour);
             e.Context.View = Matrix4.CreateTranslation(-_phm.Centre);
             e.Context.Model = Matrix.Identity;
             
-            
             _phm.IterateBalls(b =>
             {
                 e.Context.Render(b);
             });
-            /*_phm.IterateGrid((g, l) =>
-            {
-                for (int i = 0; i < g.Count; i++)
-                {
-                    e.Context.DrawEllipse(new Box(l, g[i].Radius), g[i].Colour);
-                }
-            });*/
             
             e.Context.View = Matrix.Identity;
             e.Context.Model = Matrix4.CreateScale(10d);
             TR.DrawCentred(e.Context, $"{_phm.Time * 1000d}\n{_phm.Count}", SampleFont.GetInstance(), 0, 0);
+            // Vector2I gp = _phm.GetGridLocation(MouseLocation - (Size * 0.5) + (offset.X, -offset.Y));
+            // TR.DrawCentred(e.Context, $"{gp}", SampleFont.GetInstance(), 0, 0);
         }
         
-        /*
-        private Vector2 Reflect(Vector2 dir, Radian lineAngle)
-        {
-            Radian dirA = Math.Atan2(dir.Y, dir.X);
-            Radian newA = (lineAngle * 2d) - dirA;
-            
-            return (
-                Math.Cos(newA),
-                Math.Sin(newA)
-            );
-        }
-        private void ClampToBounds(Ball b)
-        {
-            double r = b.Radius;
-            Vector2 l = b.Location;
-            
-            if (l.X + r > _bounds.Right)
-            {
-                b.Velocity = (-b.Velocity.X * Friction, b.Velocity.Y);
-                //l.X = Fold(l.X, _bounds.Right);
-                l.X = _bounds.Right - r;
-            }
-            if (l.X - r < _bounds.Left)
-            {
-                b.Velocity = (-b.Velocity.X * Friction, b.Velocity.Y);
-                //l.X = Fold(l.X, _bounds.Left);
-                l.X = _bounds.Left + r;
-            }
-            if (l.Y + r > _bounds.Top)
-            {
-                b.Velocity = (b.Velocity.X, -b.Velocity.Y * Friction);
-                //l.Y = Fold(l.Y, _bounds.Top);
-                l.Y = _bounds.Top - r;
-            }
-            if (l.Y - r < _bounds.Bottom)
-            {
-                b.Velocity = (b.Velocity.X, -b.Velocity.Y * Friction);
-                //l.Y = Fold(l.Y, _bounds.Bottom);
-                l.Y = _bounds.Bottom + r;
-            }
-            
-            b.Location = l;
-        }
-        
-        private void ResolveCollision(Ball a, Ball b)
-        {
-            double dist = a.Location.Distance(b.Location);
-            double diff = dist - (a.Radius + b.Radius);
-            double scale = (diff * 0.5) / dist;
-            scale -= 0.01;
-            
-            Vector2 between = a.Location - b.Location;
-            Vector2 offset = between * scale;
-            
-            Radian lineAngle = Math.Atan2(between.Y, between.X);
-            // Perpendicular angle
-            lineAngle += 0.5 * Math.PI;
-            
-            Vector2 aDir = Reflect(a.Velocity, lineAngle);
-            Vector2 bDir = Reflect(b.Velocity, lineAngle);
-            
-            //double momentum = (a.Velocity.Length * a.Mass) + (b.Velocity.Length * b.Mass);
-            //double magnitude = momentum * Friction * 0.5;
-            
-            if (HeadAway(a, b))
-            {
-                aDir = -aDir;
-            }
-            if (HeadAway(b, a))
-            {
-                bDir = -bDir;
-            }
-            
-            a.Location -= offset;
-            //a.Velocity = -a.Velocity * Friction;
-            //a.Velocity = aDir * (magnitude / a.Mass);
-            a.Velocity = aDir * a.Velocity.Length * Friction;
-            b.Location += offset;
-            //b.Velocity = -b.Velocity * Friction;
-            //b.Velocity = bDir * (magnitude / b.Mass);
-            b.Velocity = bDir * b.Velocity.Length * Friction;
-        }
-        private static double Fold(double value, double fold) => fold - (value - fold);
-        private static bool HeadAway(Ball a, Ball b)
-        {
-            return a.Location.SquaredDistance(b.Location) <
-                (a.Location + a.Velocity).SquaredDistance(b.Location);
-        }
-        */
         protected override void OnSizeChange(VectorIEventArgs e)
         {
             base.OnSizeChange(e);
@@ -248,7 +156,7 @@ namespace Balls
         {
             _phm.AddBall(new Ball(
                 location,
-                _random.NextDouble(2d, 10d),
+                _random.NextDouble(2d, _phm.GridSize * 0.5),
                 _random.NextVector2(-5d, 5d),
                 _random.NextColourF()
             ));
