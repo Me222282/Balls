@@ -247,21 +247,21 @@ namespace Balls
         }
         public void AddObject(Vector2 location)
         {
-            AddBall(location);
+            // AddBall(location);
             
-            // int i = _random.Next(0, 3);
-            // switch (i)
-            // {
-            //     case 0:
-            //         AddBall(location);
-            //         return;
-            //     case 1:
-            //         AddBond(location);
-            //         return;
-            //     case 2:
-            //         AddString(location);
-            //         return;
-            // }
+            int i = _random.Next(0, 3);
+            switch (i)
+            {
+                case 0:
+                    AddBall(location);
+                    return;
+                case 1:
+                    AddBond(location);
+                    return;
+                case 2:
+                    AddString(location);
+                    return;
+            }
         }
         
         public Colour3 GenColour()

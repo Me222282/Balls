@@ -14,8 +14,8 @@ namespace Balls
         public PhysicsManager(Vector2 size)
         {
             SetFrameSize(size);
-            _newPos = 0d;
-            SetFrame(size, 0d);
+            _newPos = 0;
+            SetFrame(size, 0);
         }
         
         public static floatv Gravity { get; set; } = 1000;
@@ -52,14 +52,14 @@ namespace Balls
             {
                 gs.X = MaxSize.X;
                 _gs = size.X / gs.X;
-                _gsR = 1f / _gs;
+                _gsR = 1 / _gs;
                 gs.Y = size.Y * _gsR;
             }
             if (gs.Y >= MaxSize.Y)
             {
                 gs.Y = MaxSize.Y;
                 _gs = size.Y / gs.Y;
-                _gsR = 1f / _gs;
+                _gsR = 1 / _gs;
                 gs.X = size.X * _gsR;
             }
             
@@ -165,21 +165,71 @@ namespace Balls
         private unsafe void CalculateCollisions()
         {
             Vector2I size = _grid.Size;
-            // Program.ParallelFor(size.Y - 1, 1, y =>
-            Parallel.For(0, size.Y - 1, y =>
+            // Program.ParallelFor(size.Y - 1, 1, z =>
+            // Parallel.For(0, size.Y - 1, z =>
+            // // for (int z = 0; z < size.Y - 1; z++)
+            // {
+            //     int y = size.Y - 1 - z;
+            //     ReadOnlySpan<Ball> a = new ReadOnlySpan<Ball>(),
+            //         b = _grid[0, y].AsSpan(), c,
+            //         d = new ReadOnlySpan<Ball>(),
+            //         e = _grid[0, y - 1].AsSpan(), f;//,
+            //         // g = new ReadOnlySpan<Ball>(),
+            //         // h = _grid[0, y - 2].AsSpan(), i;
+            //     for (int x = 1; x < size.X; x++)
+            //     {
+            //         c = _grid[x, y].AsSpan();
+            //         f = _grid[x, y - 1].AsSpan();
+            //         // i = _grid[x, y - 2].AsSpan();
+                    
+            //         for (int j = 0; j < e.Length; j++)
+            //         {
+            //             Ball b1 = e[j];
+                        
+            //             Iterate(b1, a);
+            //             Iterate(b1, b);
+            //             Iterate(b1, c);
+            //             Iterate(b1, d);
+            //             Iterate(b1, e);
+            //             Iterate(b1, f);
+            //             // Iterate(b1, g);
+            //             // Iterate(b1, h);
+            //             // Iterate(b1, i);
+            //         }
+                    
+            //         a = b;
+            //         b = c;
+            //         d = e;
+            //         e = f;
+            //         // g = h;
+            //         // h = i;
+            //     }
+                
+            //     for (int j = 0; j < e.Length; j++)
+            //     {
+            //         Ball b1 = e[j];
+                    
+            //         Iterate(b1, a);
+            //         Iterate(b1, b);
+            //         Iterate(b1, d);
+            //         Iterate(b1, e);
+            //         // Iterate(b1, g);
+            //         // Iterate(b1, h);
+            //     }
+            // });
+            
+            Parallel.For(1, size.X, x =>
+            // for (int z = 0; z < size.X - 1; z++)
             {
-                y = size.Y - 1 - y;
+                // int x = z;
                 ReadOnlySpan<Ball> a = new ReadOnlySpan<Ball>(),
-                    b = _grid[0, y].AsSpan(), c,
+                    b = _grid[x, 0].AsSpan(), c,
                     d = new ReadOnlySpan<Ball>(),
-                    e = _grid[0, y - 1].AsSpan(), f;//,
-                    // g = new ReadOnlySpan<Ball>(),
-                    // h = _grid[0, y - 2].AsSpan(), i;
-                for (int x = 1; x < size.X; x++)
+                    e = _grid[x - 1, 0].AsSpan(), f;
+                for (int y = 1; y < size.Y; y++)
                 {
                     c = _grid[x, y].AsSpan();
-                    f = _grid[x, y - 1].AsSpan();
-                    // i = _grid[x, y - 2].AsSpan();
+                    f = _grid[x - 1, y].AsSpan();
                     
                     for (int j = 0; j < e.Length; j++)
                     {
@@ -191,17 +241,12 @@ namespace Balls
                         Iterate(b1, d);
                         Iterate(b1, e);
                         Iterate(b1, f);
-                        // Iterate(b1, g);
-                        // Iterate(b1, h);
-                        // Iterate(b1, i);
                     }
                     
                     a = b;
                     b = c;
                     d = e;
                     e = f;
-                    // g = h;
-                    // h = i;
                 }
                 
                 for (int j = 0; j < e.Length; j++)
@@ -212,8 +257,6 @@ namespace Balls
                     Iterate(b1, b);
                     Iterate(b1, d);
                     Iterate(b1, e);
-                    // Iterate(b1, g);
-                    // Iterate(b1, h);
                 }
             });
         }
@@ -254,7 +297,7 @@ namespace Balls
             floatv scale = diff * 0.5f;
             Vector2 offset = axis * scale;
             
-            floatv inv = 1f / sumRadius;
+            floatv inv = 1 / sumRadius;
             floatv massRatioA = a.Radius * inv;
             floatv massRatioB = b.Radius * inv;
             
