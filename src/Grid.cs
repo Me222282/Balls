@@ -70,7 +70,7 @@ namespace Balls
         
         public void Clear()
         {
-            int h = _grid.GetLength(0);
+            int h = _grid.GetLength(0) - 1;
             int w = _grid.GetLength(1);
             for (int i = 0; i < h; i++)
             {
@@ -84,7 +84,7 @@ namespace Balls
         public bool Contains(Vector2I pos)
         {
             return pos.X < _grid.GetLength(1) &&
-                pos.Y < _grid.GetLength(0) &&
+                pos.Y < (_grid.GetLength(0) - 1) &&
                 pos.X >= 0 &&
                 pos.Y >= 0;
         }

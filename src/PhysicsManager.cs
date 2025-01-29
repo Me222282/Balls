@@ -18,9 +18,11 @@ namespace Balls
         }
         
         public static double Gravity { get; set; } = 1000d;
+        public static Vector2 MaxSize { get; set; } = (100d, 100d);
         
-        private readonly double _gsR = 1d / 10d;
-        public double GridSize { get; } = 10d;
+        public const double GridSize = 10d;
+        private double _gsR = 1d / 10d;
+        public double _gs = 10d;
         public Vector2 FrameSize { get; set; }
         private Vector2 _hfs;
         public Vector2 Centre => _bounds.Centre;
@@ -41,24 +43,30 @@ namespace Balls
             // FrameSize = size;
             _bounds = new Box(pos, size);
             _hfs = size * 0.5d;
-            size /= GridSize;
+            Vector2 gs = size / GridSize;
             // return;
             
+            if (gs.X >= MaxSize.X)
+            {
+                gs.X = MaxSize.X;
+                _gs = size.X / gs.X;
+                _gsR = 1d / _gs;
+                gs.Y = size.Y * _gsR;
+            }
+            if (gs.Y >= MaxSize.Y)
+            {
+                gs.Y = MaxSize.Y;
+                _gs = size.Y / gs.Y;
+                _gsR = 1d / _gs;
+                gs.X = size.X * _gsR;
+            }
+            
             Vector2I vi = new Vector2I(
-                Math.Ceiling(size.X),
-                Math.Ceiling(size.Y));
-            // if (vi == _grid?.Size) { return; }
+                Math.Ceiling(gs.X),
+                Math.Ceiling(gs.Y));
+            if (vi == _grid?.Size) { return; }
             
             _grid = new Grid(vi);
-            
-            // // Fill grid with balls
-            // int l = _balls.Count;
-            // for (int i = 0; i < l; i++)
-            // {
-            //     Ball b = _balls[i];
-                
-            //     _grid.Add(b, GetGridLocation(b.Location));
-            // }
         }
         public void SetBoundPos(Vector2 pos) => _newPos = pos;
         
@@ -147,32 +155,6 @@ namespace Balls
         
         private unsafe void CalculateCollisions()
         {
-            // int l = _balls.Count;
-            // Program.ParallelFor(l, 1, a =>
-            // {
-            //     Ball b1 = _balls[a];
-            //     Box box = new Box(b1.Location, b1.Radius * 2d);
-                
-            //     Vector2I c1 = GetGridLocation((box.Left, box.Top));
-            //     Vector2I c2 = GetGridLocation((box.Right, box.Top));
-            //     Vector2I c3 = GetGridLocation((box.Left, box.Bottom));
-            //     Vector2I c4 = GetGridLocation((box.Right, box.Bottom));
-                
-            //     Iterate(b1, c1);
-            //     if (c2 != c1)
-            //     {
-            //         Iterate(b1, c2);
-            //     }
-            //     if (c3 != c2 && c3 != c1)
-            //     {
-            //         Iterate(b1, c3);
-            //     }
-            //     if (c4 != c3 && c4 != c2 && c4 != c1)
-            //     {
-            //         Iterate(b1, c4);
-            //     }
-            // });
-            
             Vector2I size = _grid.Size;
             Program.ParallelFor(size.Y - 1, 1, y =>
             // Parallel.For(0, size.Y - 1, y =>
@@ -289,7 +271,7 @@ namespace Balls
         public Vector2I GetGridLocation(Vector2 location)
             => (Vector2I)((location - _bounds.Location + _hfs) * _gsR);
         public Vector2 GetLocation(Vector2I gp)
-            => (gp * GridSize) - _hfs + _bounds.Location;
+            => (gp * _gs) - _hfs + _bounds.Location;
         
         public void AddBall(Ball b)
         {

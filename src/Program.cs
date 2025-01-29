@@ -157,7 +157,7 @@ namespace Balls
         {
             _phm.AddBall(new Ball(
                 location,
-                _random.NextDouble(2d, _phm.GridSize * 0.5),
+                _random.NextDouble(2d, PhysicsManager.GridSize * 0.5),
                 _random.NextVector2(-5d, 5d),
                 _random.NextColour3()
             ));
