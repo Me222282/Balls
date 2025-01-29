@@ -158,13 +158,13 @@ namespace Balls
                 location,
                 _random.NextDouble(2d, PhysicsManager.GridSize * 0.5),
                 _random.NextVector2(-5d, 5d),
-                _random.NextColour3()
+                GenColour()
             ));
         }
         public void AddBond(Vector2 location)
         {
             Vector2 vel = _random.NextVector2(-5d, 5d);
-            Colour3 c = _random.NextColour3();
+            Colour3 c = GenColour();
             double r = _random.NextDouble(2d, PhysicsManager.GridSize * 0.5);
             double dist = _random.NextDouble(2d * r, 3d * r);
             
@@ -179,7 +179,7 @@ namespace Balls
         public void AddString(Vector2 location)
         {
             Vector2 vel = _random.NextVector2(-5d, 5d);
-            Colour3 c = _random.NextColour3();
+            Colour3 c = GenColour();
             double e = _random.NextDouble(0.01, 0.7);
             double r = _random.NextDouble(2d, PhysicsManager.GridSize * 0.5);
             double dist = _random.NextDouble(2d * r, 2.5 * r);
@@ -213,6 +213,9 @@ namespace Balls
                     return;
             }
         }
+        
+        public Colour3 GenColour()
+            => Colour3.FromHsl(_random.NextDouble(0d, 360d), 1d, 0.5);
         
         protected override void OnKeyDown(KeyEventArgs e)
         {
