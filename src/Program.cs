@@ -1,4 +1,20 @@
-﻿using System;
+﻿#pragma warning disable CS8981
+global using floatv =
+#if DOUBLE
+    System.Double;
+#else
+    System.Single;
+#endif
+
+global using Maths =
+#if DOUBLE
+    System.Math;
+#else
+    System.MathF;
+#endif
+#pragma warning restore CS8981
+
+using System;
 using Zene.Structs;
 using Zene.Graphics;
 using Zene.Windowing;
@@ -67,13 +83,13 @@ namespace Balls
         }
         
         public Program(int width, int height, string title)
-            : base(width, height, title, 4.3, true)
+            : base(width, height, title, 4.3f, true)
         {
             _random = new Random();
             _phm = new PhysicsManager((width, height));
             
-            double hw = width * 0.5;
-            double hh = height * 0.5;
+            floatv hw = width * 0.5f;
+            floatv hh = height * 0.5f;
             
             for (int i = 0; i < 40; i++)
             {
@@ -88,6 +104,7 @@ namespace Balls
         
         public static TextRenderer TR;
         private bool _paused = false;
+        private bool _render = true;
         
         protected override void OnUpdate(FrameEventArgs e)
         {
@@ -106,7 +123,7 @@ namespace Balls
             
             if (!_paused)
             {
-                _phm.ApplyPhysics(1d / 60d, 8);
+                _phm.ApplyPhysics(1f / 60, 8);
                 // _phm.ApplyPhysics(1d / 60d, 1);
             }
             
@@ -114,10 +131,13 @@ namespace Balls
             e.Context.View = Matrix4.CreateTranslation(-_phm.Centre);
             e.Context.Model = Matrix.Identity;
             
-            _phm.IterateBalls(b =>
+            if (_render)
             {
-                e.Context.Render(b);
-            });
+                _phm.IterateBalls(b =>
+                {
+                    e.Context.Render(b);
+                });
+            }
             
             e.Context.View = Matrix.Identity;
             e.Context.Model = Matrix4.CreateScale(10d);
@@ -138,7 +158,7 @@ namespace Balls
                 _phm.SetFrameSize(e.Value);
             });
             
-            DrawContext.Projection = Matrix4.CreateOrthographic(e.X, e.Y, 0d, 1d);
+            DrawContext.Projection = Matrix4.CreateOrthographic(e.X, e.Y, 0, 1);
         }
         protected override void OnWindowMove(VectorIEventArgs e)
         {
@@ -156,21 +176,21 @@ namespace Balls
         {
             _phm.AddBall(new Ball(
                 location,
-                _random.NextDouble(2d, PhysicsManager.GridSize * 0.5),
-                _random.NextVector2(-5d, 5d),
+                _random.NextNumber(2, PhysicsManager.GridSize * 0.5f),
+                _random.NextVector2(-5, 5),
                 GenColour()
             ));
         }
         public void AddBond(Vector2 location)
         {
-            Vector2 vel = _random.NextVector2(-5d, 5d);
+            Vector2 vel = _random.NextNumber(-5, 5);
             Colour3 c = GenColour();
-            double r = _random.NextDouble(2d, PhysicsManager.GridSize * 0.5);
-            double dist = _random.NextDouble(2d * r, 3d * r);
+            floatv r = _random.NextNumber(2, PhysicsManager.GridSize * 0.5f);
+            floatv dist = _random.NextNumber(2 * r, 3 * r);
             
-            Vector2 dir = _random.NextVector2(-1d, 1d).Normalised();
-            Vector2 a = location + (dir * dist * 0.5);
-            Vector2 b = location - (dir * dist * 0.5);
+            Vector2 dir = _random.NextVector2(-1, 1).Normalised();
+            Vector2 a = location + (dir * dist * 0.5f);
+            Vector2 b = location - (dir * dist * 0.5f);
             
             _phm.AddBond(new Bond(dist, 
                 new Ball(a, r, vel, c),
@@ -178,16 +198,16 @@ namespace Balls
         }
         public void AddString(Vector2 location)
         {
-            Vector2 vel = _random.NextVector2(-5d, 5d);
+            Vector2 vel = _random.NextVector2(-5, 5);
             Colour3 c = GenColour();
-            double e = _random.NextDouble(0.01, 0.7);
-            double r = _random.NextDouble(2d, PhysicsManager.GridSize * 0.5);
-            double dist = _random.NextDouble(2d * r, 2.5 * r);
+            floatv e = _random.NextNumber(0.01f, 0.7f);
+            floatv r = _random.NextNumber(2, PhysicsManager.GridSize * 0.5f);
+            floatv dist = _random.NextNumber(2 * r, 2.5f * r);
             int cp = _random.Next(2, 6);
             
             Span<Ball> span = new Ball[cp + 1];
             span[0] = new Ball(location, r, vel, c);
-            Vector2 dir = _random.NextVector2(-1d, 1d).Normalised();
+            Vector2 dir = _random.NextVector2(-1, 1).Normalised();
             
             for (int i = 1; i < cp + 1; i++)
             {
@@ -199,23 +219,25 @@ namespace Balls
         }
         public void AddObject(Vector2 location)
         {
-            int i = _random.Next(0, 3);
-            switch (i)
-            {
-                case 0:
-                    AddBall(location);
-                    return;
-                case 1:
-                    AddBond(location);
-                    return;
-                case 2:
-                    AddString(location);
-                    return;
-            }
+            AddBall(location);
+            
+            // int i = _random.Next(0, 3);
+            // switch (i)
+            // {
+            //     case 0:
+            //         AddBall(location);
+            //         return;
+            //     case 1:
+            //         AddBond(location);
+            //         return;
+            //     case 2:
+            //         AddString(location);
+            //         return;
+            // }
         }
         
         public Colour3 GenColour()
-            => Colour3.FromHsl(_random.NextDouble(0d, 360d), 1d, 0.5);
+            => Colour3.FromHsl(_random.NextNumber(0, 360), 1, 0.5f);
         
         protected override void OnKeyDown(KeyEventArgs e)
         {
@@ -224,6 +246,11 @@ namespace Balls
             if (e[Keys.Space])
             {
                 _paused = !_paused;
+                return;
+            }
+            if (e[Keys.R])
+            {
+                _render = !_render;
                 return;
             }
         }

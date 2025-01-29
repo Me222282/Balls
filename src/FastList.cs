@@ -18,6 +18,8 @@ namespace Balls
         public uint Length => _len;
         public uint Capcity => _cap;
         
+        public T this[int index] => _data[index];
+        
         private void ExtendCap()
         {
             uint nc = _cap * 2u;

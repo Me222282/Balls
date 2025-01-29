@@ -18,15 +18,15 @@ namespace Balls
             SetFrame(size, 0d);
         }
         
-        public static double Gravity { get; set; } = 1000d;
-        public static Vector2 MaxSize { get; set; } = (100d, 100d);
+        public static floatv Gravity { get; set; } = 1000;
+        public static Vector2 MaxSize { get; set; } = (1000, 1000);
         
-        public const double GridSize = 10d;
-        private double _gsR = 1d / 10d;
-        public double _gs = 10d;
+        public const floatv GridSize = 10;
+        private floatv _gsR = 1f / 10;
+        public floatv _gs = 10;
         public Vector2 FrameSize { get; set; }
         private Vector2 _hfs;
-        public Vector2 Centre => _bounds.Centre;
+        public Vector2 Centre => _bounds.Location;
         public Grid _grid;
         
         private Box _bounds;
@@ -42,7 +42,7 @@ namespace Balls
         {
             // FrameSize = size;
             _bounds = new Box(pos, size);
-            _hfs = size * 0.5d;
+            _hfs = size * 0.5f;
             Vector2 gs = size / GridSize;
             // return;
             
@@ -50,34 +50,34 @@ namespace Balls
             {
                 gs.X = MaxSize.X;
                 _gs = size.X / gs.X;
-                _gsR = 1d / _gs;
+                _gsR = 1f / _gs;
                 gs.Y = size.Y * _gsR;
             }
             if (gs.Y >= MaxSize.Y)
             {
                 gs.Y = MaxSize.Y;
                 _gs = size.Y / gs.Y;
-                _gsR = 1d / _gs;
+                _gsR = 1f / _gs;
                 gs.X = size.X * _gsR;
             }
             
             Vector2I vi = new Vector2I(
-                Math.Ceiling(gs.X),
-                Math.Ceiling(gs.Y));
+                Maths.Ceiling(gs.X),
+                Maths.Ceiling(gs.Y));
             if (vi == _grid?.Size) { return; }
             
             _grid = new Grid(vi);
         }
         public void SetBoundPos(Vector2 pos) => _newPos = pos;
         
-        public void ApplyPhysics(double dt, int subStep)
+        public void ApplyPhysics(floatv dt, int subStep)
         {
             double t = Core.Time;
             
             dt /= subStep;
             
             Vector2 changeS = (FrameSize - _bounds.Size) / subStep;
-            Vector2 changeP = (_newPos - _bounds.Centre) / subStep;
+            Vector2 changeP = (_newPos - _bounds.Location) / subStep;
             bool change = changeS != 0 || changeP != 0;
             
             for (int i = 0; i < subStep; i++)
@@ -85,32 +85,32 @@ namespace Balls
                 if (change)
                 {
                     SetFrame(_bounds.Size + changeS,
-                        _bounds.Centre + changeP);
+                        _bounds.Location + changeP);
                 }
                 ApplyPhysics(dt);
             }
             
             Time = Core.Time - t;
         }
-        private void ApplyPhysics(double dt)
+        private void ApplyPhysics(floatv dt)
         {
             _grid.Clear();
             PreCollisionPhsyics();
             CalculateCollisions();
             
             // Program.ParallelFor(l, 1, i =>
-            // // Parallel.For(0, l, i =>
-            // {
-            //     Ball b = _balls[i];
-            //     b.ApplyVerlet(dt);
-            // });
-            
-            Span<Ball> span = _balls.AsSpan();
-            for (int i = 0; i < span.Length; i++)
+            Parallel.For(0, (int)_balls.Length, i =>
             {
-                Ball b = span[i];
+                Ball b = _balls[i];
                 b.ApplyVerlet(dt);
-            }
+            });
+            
+            // Span<Ball> span = _balls.AsSpan();
+            // for (int i = 0; i < span.Length; i++)
+            // {
+            //     Ball b = span[i];
+            //     b.ApplyVerlet(dt);
+            // }
         }
         
         private void PreCollisionPhsyics()
@@ -135,7 +135,7 @@ namespace Balls
         }
         private void ClipToBounds(Ball b)
         {
-            double r = b.Radius;
+            floatv r = b.Radius;
             Vector2 l = b.Location;
             
             if (l.X + r > _bounds.Right)
@@ -163,8 +163,8 @@ namespace Balls
         private unsafe void CalculateCollisions()
         {
             Vector2I size = _grid.Size;
-            Program.ParallelFor(size.Y - 1, 1, y =>
-            // Parallel.For(0, size.Y - 1, y =>
+            // Program.ParallelFor(size.Y - 1, 1, y =>
+            Parallel.For(0, size.Y - 1, y =>
             {
                 y = size.Y - 1 - y;
                 ReadOnlySpan<Ball> a = new ReadOnlySpan<Ball>(),
@@ -233,9 +233,9 @@ namespace Balls
         }
         private void ResolveCollision(Ball a, Ball b)
         {
-            double sumRadius = a.Radius + b.Radius;
+            floatv sumRadius = a.Radius + b.Radius;
             Vector2 axis = a.Location - b.Location;
-            double dist = axis.SquaredLength;
+            floatv dist = axis.SquaredLength;
             
             if (dist >= (sumRadius * sumRadius)) { return; }
             
@@ -245,17 +245,16 @@ namespace Balls
             }
             else
             {
-                dist = Math.Sqrt(dist);
+                dist = Maths.Sqrt(dist);
                 axis /= dist;
             }
-            double diff = dist - sumRadius;
-            double scale = diff * 0.5;
-            //scale -= 0.01;
+            floatv diff = dist - sumRadius;
+            floatv scale = diff * 0.5f;
             Vector2 offset = axis * scale;
             
-            double inv = 1d / sumRadius;
-            double massRatioA = a.Radius * inv;
-            double massRatioB = b.Radius * inv;
+            floatv inv = 1f / sumRadius;
+            floatv massRatioA = a.Radius * inv;
+            floatv massRatioB = b.Radius * inv;
             
             a.Location -= offset * massRatioA;
             // SetLocation(a, a.Location - (offset * massRatioA));
@@ -282,9 +281,9 @@ namespace Balls
         
         public void AddBall(Ball b)
         {
-            if (b.Radius > GridSize * 0.5)
+            if (b.Radius > GridSize * 0.5f)
             {
-                b.Radius = GridSize * 0.5;
+                b.Radius = GridSize * 0.5f;
             }
             
             _balls.Add(b);
