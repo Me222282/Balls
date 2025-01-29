@@ -34,6 +34,8 @@ namespace Balls
         private FastList<Ball> _balls = new FastList<Ball>(100);
         private FastList<Bond> _bonds = new FastList<Bond>(50);
         
+        public Fixed F;
+        
         public double Time { get; private set; }
         public int Count => (int)_balls.Length;
         
@@ -82,6 +84,8 @@ namespace Balls
             Vector2 changeP = (_newPos - _bounds.Location) / subStep;
             bool change = changeS != 0 || changeP != 0;
             
+            Vector2 fDiff = (F.nl - F.Location) / subStep;
+            
             for (int i = 0; i < subStep; i++)
             {
                 if (change)
@@ -89,6 +93,7 @@ namespace Balls
                     SetFrame(_bounds.Size + changeS,
                         _bounds.Location + changeP);
                 }
+                F.Location += fDiff;
                 ApplyPhysics(dt);
             }
             
@@ -122,6 +127,11 @@ namespace Balls
             {
                 Bond b = bonds[i];
                 b.Constrain();
+            }
+            
+            if (F.Ball != null)
+            {
+                F.Ball.Location = F.Location;
             }
             
             Span<Ball> span = _balls.AsSpan();
@@ -378,6 +388,22 @@ namespace Balls
                 AddBond(new Bond(c.Length, lb, b, c.Elasticity));
                 lb = b;
             }
+        }
+        public Ball GetBall(Vector2 framePos)
+        {
+            Span<Ball> span = _balls.AsSpan();
+            for (int i = 0; i < span.Length; i++)
+            {
+                Ball b = span[i];
+                
+                // Inside circle
+                if (b.Location.SquaredDistance(framePos) < (b.Radius * b.Radius))
+                {
+                    return b;
+                }
+            }
+            
+            return null;
         }
         
         public void IterateBalls(Action<Ball> action)

@@ -47,4 +47,18 @@ namespace Balls
         public double Length;
         public double Elasticity;
     }
+    public struct Fixed
+    {
+        public Fixed(Vector2 l, Ball b)
+        {
+            Location = l;
+            Ball = b;
+        }
+        
+        public Vector2 Location;
+        internal Vector2 nl;
+        public Ball Ball;
+        
+        public void NewLocation(Vector2 l) => nl = l;
+    }
 }

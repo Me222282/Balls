@@ -135,13 +135,21 @@ namespace Balls
         {
             Vector2 offset = Location + (Size * 0.5);
             
-            if (this[MouseButton.Right])
+            if (this[MouseButton.Middle])
             {
                 _phm.RemoveAt(MouseLocation - (Size * 0.5) + (offset.X, -offset.Y));
             }
-            else if (this[MouseButton.Left])
+            else if (this[MouseButton.Right])
             {
                 AddObject(MouseLocation - (Size * 0.5) + (offset.X, -offset.Y));
+            }
+            else if (this[MouseButton.Left])
+            {
+                if (_phm.F.Ball != null)
+                {
+                    Vector2 pos = MouseLocation - (Size * 0.5) + (offset.X, -offset.Y);
+                    _phm.F.NewLocation(pos + _fixedDiff);
+                }
             }
             
             base.OnUpdate(e);
@@ -174,6 +182,29 @@ namespace Balls
             // TR.DrawCentred(e.Context, $"{gp}", SampleFont.GetInstance(), 0, 0);
         }
         
+        private Vector2 _fixedDiff;
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            
+            if (e.Button != MouseButton.Left) { return; }
+            
+            Vector2 offset = Location + (Size * 0.5);
+            Vector2 search = e.Location - (Size * 0.5) + (offset.X, -offset.Y);
+            Ball b = _phm.GetBall(search);
+            if (b == null) { return; }
+            
+            _fixedDiff = b.Location - search;
+            _phm.F = new Fixed(b.Location, b);
+        }
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            
+            if (e.Button != MouseButton.Left) { return; }
+            
+            _phm.F = new Fixed();
+        }
         protected override void OnSizeChange(VectorIEventArgs e)
         {
             base.OnSizeChange(e);
