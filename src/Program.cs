@@ -20,6 +20,7 @@ using Zene.Graphics;
 using Zene.Windowing;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace Balls
 {
@@ -83,7 +84,7 @@ namespace Balls
         }
         
         public Program(int width, int height, string title)
-            : base(width, height, title, 4.3f, true)
+            : base(width, height, title, true)
         {
             _random = new Random();
             _phm = new PhysicsManager((width, height));
@@ -97,10 +98,34 @@ namespace Balls
             }
             
             TR = new TextRenderer();
+            
+            _drawable = new DrawObject<float, byte>(stackalloc float[]
+            {
+                0.5f, 0.5f, 1f, 1f,
+                0.5f, -0.5f, 1f, 0f,
+                -0.5f, -0.5f, 0f, 0f,
+                -0.5f, 0.5f, 0f, 1f
+            }, stackalloc byte[] { 0, 1, 2, 2, 3, 0 }, 4, 0, AttributeSize.D2, BufferUsage.DrawFrequent);
+            _drawable.AddAttribute(ShaderLocation.TextureCoords, 2, AttributeSize.D2);
+            
+            _instanceData = new ArrayBuffer<DataLayout>(1, BufferUsage.DrawRepeated);
+            _instanceData.InitData(_mCapacity);
+
+            // Add instance reference
+            _drawable.AddInstanceBuffer(_instanceData, 3, 0, 0, DataType.FloatV, AttributeSize.D2, 1);
+            // _drawable.AddInstanceBuffer(_instanceData, 4, 0, 0, DataType.FloatV, AttributeSize.D2, 1);
+            _drawable.AddInstanceBuffer(_instanceData, 5, 0, 2 * sizeof(floatv), DataType.FloatV, AttributeSize.D1, 1);
+            _drawable.AddInstanceBuffer(_instanceData, 6, 0, 3 * sizeof(floatv), DataType.Float, AttributeSize.D3, 1);
+            
+            _shader = new Shader();
         }
         
         private Random _random;
         private PhysicsManager _phm;
+        private ArrayBuffer<DataLayout> _instanceData;
+        private DrawObject<float, byte> _drawable;
+        private Shader _shader;
+        private int _mCapacity = 2000;
         
         public static TextRenderer TR;
         private bool _paused = false;
@@ -133,10 +158,13 @@ namespace Balls
             
             if (_render)
             {
-                _phm.IterateBalls(b =>
-                {
-                    e.Context.Render(b);
-                });
+                // _phm.IterateBalls(b =>
+                // {
+                //     e.Context.Render(b);
+                // });
+                FillInst(_phm.Span);
+                e.Context.Shader = _shader;
+                e.Context.Draw(_drawable, _phm.Count);
             }
             
             e.Context.View = Matrix.Identity;
@@ -253,6 +281,34 @@ namespace Balls
                 _render = !_render;
                 return;
             }
+        }
+        
+        private void FillInst(ReadOnlySpan<Ball> bs)
+        {
+            Span<DataLayout> block = stackalloc DataLayout[bs.Length];
+            
+            for (int i = 0; i < bs.Length; i++)
+            {
+                Ball b = bs[i];
+                block[i] = new DataLayout(b.Location, b.Radius, b.Colour);
+            }
+            
+            _instanceData.EditData(0, block);
+        }
+        
+        private struct DataLayout
+        {
+            public DataLayout(Vector2 l, floatv r, ColourF3 c)
+            {
+                Location = l;
+                Radius = r;
+                Colour = c;
+            }
+            
+            public Vector2 Location;
+            // private Vector2 _oldPos;
+            public floatv Radius;
+            public ColourF3 Colour;
         }
     }
 }

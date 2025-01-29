@@ -23,11 +23,11 @@ namespace Balls
         
         public const floatv GridSize = 10;
         private floatv _gsR = 1f / 10;
-        public floatv _gs = 10;
+        private floatv _gs = 10;
         public Vector2 FrameSize { get; set; }
         private Vector2 _hfs;
         public Vector2 Centre => _bounds.Location;
-        public Grid _grid;
+        private Grid _grid;
         
         private Box _bounds;
         private Vector2 _newPos;
@@ -36,6 +36,8 @@ namespace Balls
         
         public double Time { get; private set; }
         public int Count => (int)_balls.Length;
+        
+        public ReadOnlySpan<Ball> Span => _balls.AsSpan();
         
         public void SetFrameSize(Vector2 size) => FrameSize = size;
         private void SetFrame(Vector2 size, Vector2 pos)
