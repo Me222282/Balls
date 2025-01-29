@@ -17,7 +17,7 @@ namespace Balls
             SetFrame(size, 0d);
         }
         
-        public double Gravity { get; set; } = 1000d;
+        public static double Gravity { get; set; } = 1000d;
         
         private readonly double _gsR = 1d / 10d;
         public double GridSize { get; } = 10d;
@@ -105,7 +105,7 @@ namespace Balls
             {
                 Ball b = _balls[i];
                 
-                b.Acceleration = (0d, -Gravity);
+                // b.Acceleration = (0d, -Gravity);
                 ClipToBounds(b);
                 
                 _grid.Add(b, GetGridLocation(b.Location));
@@ -140,46 +140,79 @@ namespace Balls
         
         private unsafe void CalculateCollisions()
         {
-            int l = _balls.Count;
+            // int l = _balls.Count;
+            // Program.ParallelFor(l, 1, a =>
+            // {
+            //     Ball b1 = _balls[a];
+            //     Box box = new Box(b1.Location, b1.Radius * 2d);
+                
+            //     Vector2I c1 = GetGridLocation((box.Left, box.Top));
+            //     Vector2I c2 = GetGridLocation((box.Right, box.Top));
+            //     Vector2I c3 = GetGridLocation((box.Left, box.Bottom));
+            //     Vector2I c4 = GetGridLocation((box.Right, box.Bottom));
+                
+            //     Iterate(b1, c1);
+            //     if (c2 != c1)
+            //     {
+            //         Iterate(b1, c2);
+            //     }
+            //     if (c3 != c2 && c3 != c1)
+            //     {
+            //         Iterate(b1, c3);
+            //     }
+            //     if (c4 != c3 && c4 != c2 && c4 != c1)
+            //     {
+            //         Iterate(b1, c4);
+            //     }
+            // });
             
-            Program.ParallelFor(l, 1, a =>
+            Vector2I size = _grid.Size - 1;
+            Program.ParallelFor(size.Y - 1, 2, y =>
             {
-                Ball b1 = _balls[a];
-                Box box = new Box(b1.Location, b1.Radius * 2d);
-                
-                Vector2I c1 = GetGridLocation((box.Left, box.Top));
-                Vector2I c2 = GetGridLocation((box.Right, box.Top));
-                Vector2I c3 = GetGridLocation((box.Left, box.Bottom));
-                Vector2I c4 = GetGridLocation((box.Right, box.Bottom));
-                
-                Iterate(b1, c1);
-                if (c2 != c1)
+                y = size.Y - 2 - y;
+                ReadOnlySpan<Ball> a = _grid[-1, y + 1].AsSpan(),
+                    b = _grid[0, y + 1].AsSpan(), c,
+                    d = _grid[-1, y].AsSpan(),
+                    e = _grid[0, y].AsSpan(), f;//,
+                    // g = _grid[-1, y - 1].AsSpan(),
+                    // h = _grid[0, y - 1].AsSpan(), i;
+                for (int x = 1; x < size.X; x++)
                 {
-                    Iterate(b1, c2);
-                }
-                if (c3 != c2 && c3 != c1)
-                {
-                    Iterate(b1, c3);
-                }
-                if (c4 != c3 && c4 != c2 && c4 != c1)
-                {
-                    Iterate(b1, c4);
-                }
-                
-                // for (int b = a + 1; b < l; b++)
-                // {
-                //     Ball b2 = _balls[b];
+                    c = _grid[x, y + 1].AsSpan();
+                    f = _grid[x, y].AsSpan();
+                    // i = _grid[x, y - 1].AsSpan();
                     
-                //     ResolveCollision(b1, b2);
-                // }
+                    for (int j = 0; j < e.Length; j++)
+                    {
+                        Ball b1 = e[j];
+                        
+                        Iterate(b1, a);
+                        Iterate(b1, b);
+                        Iterate(b1, c);
+                        Iterate(b1, d);
+                        Iterate(b1, e);
+                        Iterate(b1, f);
+                        // Iterate(b1, g);
+                        // Iterate(b1, h);
+                        // Iterate(b1, i);
+                    }
+                    
+                    a = b;
+                    b = c;
+                    d = e;
+                    e = f;
+                    // g = h;
+                    // h = i;
+                }
             });
         }
         private void Iterate(Ball b1, Vector2I p)
         {
             if (!_grid.Contains(p)) { return; }
-            FastList<Ball> bs = _grid[p.X, p.Y];
-            
-            ReadOnlySpan<Ball> span = bs.AsSpan();
+            Iterate(b1, _grid[p.X, p.Y].AsSpan());
+        }
+        private void Iterate(Ball b1, ReadOnlySpan<Ball> span)
+        {
             for (int b = 0; b < span.Length; b++)
             {
                 Ball b2 = span[b];
@@ -215,10 +248,10 @@ namespace Balls
             double massRatioA = a.Radius * inv;
             double massRatioB = b.Radius * inv;
             
-            //a.Location -= offset;
-            SetLocation(a, a.Location - (offset * massRatioA));
-            //b.Location += offset;
-            SetLocation(b, b.Location + (offset * massRatioB));
+            a.Location -= offset * massRatioA;
+            // SetLocation(a, a.Location - (offset * massRatioA));
+            b.Location += offset * massRatioB;
+            // SetLocation(b, b.Location + (offset * massRatioB));
         }
         
         public void SetLocation(Ball b, Vector2 location)

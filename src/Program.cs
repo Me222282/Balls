@@ -158,7 +158,7 @@ namespace Balls
                 location,
                 _random.NextDouble(2d, _phm.GridSize * 0.5),
                 _random.NextVector2(-5d, 5d),
-                _random.NextColourF()
+                _random.NextColour3()
             ));
         }
         
