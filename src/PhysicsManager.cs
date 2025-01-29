@@ -91,6 +91,13 @@ namespace Balls
             CalculateCollisions();
             
             int l = _balls.Count;
+            // Program.ParallelFor(l, 1, i =>
+            // // Parallel.For(0, l, i =>
+            // {
+            //     Ball b = _balls[i];
+            //     b.ApplyVerlet(dt);
+            // });
+            
             for (int i = 0; i < l; i++)
             {
                 Ball b = _balls[i];
@@ -166,21 +173,22 @@ namespace Balls
             //     }
             // });
             
-            Vector2I size = _grid.Size - 1;
-            Program.ParallelFor(size.Y - 1, 2, y =>
+            Vector2I size = _grid.Size;
+            Program.ParallelFor(size.Y - 1, 1, y =>
+            // Parallel.For(0, size.Y - 1, y =>
             {
-                y = size.Y - 2 - y;
-                ReadOnlySpan<Ball> a = _grid[-1, y + 1].AsSpan(),
-                    b = _grid[0, y + 1].AsSpan(), c,
-                    d = _grid[-1, y].AsSpan(),
-                    e = _grid[0, y].AsSpan(), f;//,
-                    // g = _grid[-1, y - 1].AsSpan(),
-                    // h = _grid[0, y - 1].AsSpan(), i;
+                y = size.Y - 1 - y;
+                ReadOnlySpan<Ball> a = new ReadOnlySpan<Ball>(),
+                    b = _grid[0, y].AsSpan(), c,
+                    d = new ReadOnlySpan<Ball>(),
+                    e = _grid[0, y - 1].AsSpan(), f;//,
+                    // g = new ReadOnlySpan<Ball>(),
+                    // h = _grid[0, y - 2].AsSpan(), i;
                 for (int x = 1; x < size.X; x++)
                 {
-                    c = _grid[x, y + 1].AsSpan();
-                    f = _grid[x, y].AsSpan();
-                    // i = _grid[x, y - 1].AsSpan();
+                    c = _grid[x, y].AsSpan();
+                    f = _grid[x, y - 1].AsSpan();
+                    // i = _grid[x, y - 2].AsSpan();
                     
                     for (int j = 0; j < e.Length; j++)
                     {
@@ -203,6 +211,18 @@ namespace Balls
                     e = f;
                     // g = h;
                     // h = i;
+                }
+                
+                for (int j = 0; j < e.Length; j++)
+                {
+                    Ball b1 = e[j];
+                    
+                    Iterate(b1, a);
+                    Iterate(b1, b);
+                    Iterate(b1, d);
+                    Iterate(b1, e);
+                    // Iterate(b1, g);
+                    // Iterate(b1, h);
                 }
             });
         }

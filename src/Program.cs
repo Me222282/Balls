@@ -61,6 +61,7 @@ namespace Balls
             Window w = new Program(800, 500, "WORK");
             DC = w.DrawContext;
             w.RunMultithread();
+            w.Dispose();
             
             Core.Terminate();
         }
@@ -105,7 +106,7 @@ namespace Balls
             
             if (!_paused)
             {
-                _phm.ApplyPhysics(1d / 60d, 4);
+                _phm.ApplyPhysics(1d / 60d, 8);
                 // _phm.ApplyPhysics(1d / 60d, 1);
             }
             

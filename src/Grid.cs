@@ -19,14 +19,18 @@ namespace Balls
     {
         public Grid(Vector2I size)
         {
-            _grid = new FastList<Ball>[size.Y + 2, size.X + 2];
+            _grid = new FastList<Ball>[size.Y + 1, size.X];
         
-            for (int x = 0; x < size.X + 2; x++)
+            for (int x = 0; x < size.X; x++)
             {
-                for (int y = 0; y < size.Y + 2; y++)
+                for (int y = 0; y < size.Y; y++)
                 {
                     _grid[y, x] = new FastList<Ball>(8);
                 }
+            }
+            for (int x = 0; x < size.X; x++)
+            {
+                _grid[size.Y, x] = new FastList<Ball>();
             }
         }
         
@@ -47,7 +51,7 @@ namespace Balls
                 //     return default;
                 // }
                 
-                return _grid[y + 1, x + 1];
+                return _grid[y, x];
             }
         }
         
@@ -55,13 +59,13 @@ namespace Balls
         {
             if (!Contains(pos)) { return; }
             
-            _grid[pos.Y + 1, pos.X + 1].Add(b);
+            _grid[pos.Y, pos.X].Add(b);
         }
         public void Remove(Ball b, Vector2I pos)
         {
             if (!Contains(pos)) { return; }
             
-            _grid[pos.Y + 1, pos.X + 1].Remove(b);
+            _grid[pos.Y, pos.X].Remove(b);
         }
         
         public void Clear()
@@ -79,10 +83,10 @@ namespace Balls
         
         public bool Contains(Vector2I pos)
         {
-            return pos.X < (_grid.GetLength(1) - 1) &&
-                pos.Y < (_grid.GetLength(0) - 1) &&
-                pos.X >= -1 &&
-                pos.Y >= -1;
+            return pos.X < _grid.GetLength(1) &&
+                pos.Y < _grid.GetLength(0) &&
+                pos.X >= 0 &&
+                pos.Y >= 0;
         }
     }
 }

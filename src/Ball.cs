@@ -49,7 +49,8 @@ namespace Balls
             Vector2 vel = Velocity;
             _oldPos = Location;
             // Location += vel + (Acceleration * dt * dt);
-            Location += vel - (0, PhysicsManager.Gravity * dt * dt);
+            Location += vel - (0d, PhysicsManager.Gravity * dt * dt);
+            // Location += vel - (0d, 1000d * dt * dt);
         }
     }
 }
