@@ -5,6 +5,7 @@ using Zene.Windowing;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Balls
 {
@@ -30,12 +31,11 @@ namespace Balls
         
         private Box _bounds;
         private Vector2 _newPos;
-        private List<Ball> _balls = new List<Ball>();
-        
-        internal Ball F => _balls[0];
+        private FastList<Ball> _balls = new FastList<Ball>(100);
+        private FastList<Bond> _bonds = new FastList<Bond>(50);
         
         public double Time { get; private set; }
-        public int Count => _balls.Count;
+        public int Count => (int)_balls.Length;
         
         public void SetFrameSize(Vector2 size) => FrameSize = size;
         private void SetFrame(Vector2 size, Vector2 pos)
@@ -98,7 +98,6 @@ namespace Balls
             PreCollisionPhsyics();
             CalculateCollisions();
             
-            int l = _balls.Count;
             // Program.ParallelFor(l, 1, i =>
             // // Parallel.For(0, l, i =>
             // {
@@ -106,19 +105,27 @@ namespace Balls
             //     b.ApplyVerlet(dt);
             // });
             
-            for (int i = 0; i < l; i++)
+            Span<Ball> span = _balls.AsSpan();
+            for (int i = 0; i < span.Length; i++)
             {
-                Ball b = _balls[i];
+                Ball b = span[i];
                 b.ApplyVerlet(dt);
             }
         }
         
         private void PreCollisionPhsyics()
         {
-            int l = _balls.Count;
-            for (int i = 0; i < l; i++)
+            Span<Bond> bonds = _bonds.AsSpan();
+            for (int i = 0; i < bonds.Length; i++)
             {
-                Ball b = _balls[i];
+                Bond b = bonds[i];
+                b.Constrain();
+            }
+            
+            Span<Ball> span = _balls.AsSpan();
+            for (int i = 0; i < span.Length; i++)
+            {
+                Ball b = span[i];
                 
                 // b.Acceleration = (0d, -Gravity);
                 ClipToBounds(b);
@@ -256,17 +263,17 @@ namespace Balls
             // SetLocation(b, b.Location + (offset * massRatioB));
         }
         
-        public void SetLocation(Ball b, Vector2 location)
-        {
-            Vector2I gridPosOld = GetGridLocation(b.Location);
-            Vector2I gridPosNew = GetGridLocation(location);
-            b.Location = location;
+        // public void SetLocation(Ball b, Vector2 location)
+        // {
+        //     Vector2I gridPosOld = GetGridLocation(b.Location);
+        //     Vector2I gridPosNew = GetGridLocation(location);
+        //     b.Location = location;
             
-            if (gridPosOld == gridPosNew) { return; }
+        //     if (gridPosOld == gridPosNew) { return; }
             
-            _grid.Remove(b, gridPosOld);
-            _grid.Add(b, gridPosNew);
-        }
+        //     _grid.Remove(b, gridPosOld);
+        //     _grid.Add(b, gridPosNew);
+        // }
         
         public Vector2I GetGridLocation(Vector2 location)
             => (Vector2I)((location - _bounds.Location + _hfs) * _gsR);
@@ -281,45 +288,60 @@ namespace Balls
             }
             
             _balls.Add(b);
-            Vector2I gridPos = GetGridLocation(b.Location);
-            _grid.Add(b, gridPos);
         }
-        public bool RemoveBall(Ball b)
-        {
-            if (!_balls.Remove(b))
-            {
-                return false;
-            }
-            
-            Vector2I gridPos = GetGridLocation(b.Location);
-            _grid.Remove(b, gridPos);
-            
-            return true;
-        }
+        // public bool RemoveBall(Ball b) => _balls.Remove(b);
         public void RemoveAt(Vector2 framePos)
         {
-            int l = _balls.Count;
-            for (int i = 0; i < l; i++)
+            Span<Ball> span = _balls.AsSpan();
+            for (int i = 0; i < span.Length; i++)
             {
-                Ball b = _balls[i];
+                Ball b = span[i];
                 
                 // Inside circle
                 if (b.Location.SquaredDistance(framePos) < (b.Radius * b.Radius))
                 {
                     _balls.RemoveAt(i);
-                    Vector2I gridPos = GetGridLocation(b.Location);
-                    _grid.Remove(b, gridPos);
+                    int j = IsInBond(b);
+                    if (j < 0) { return; }
+                    _bonds.RemoveAt(j);
                     return;
                 }
+            }
+        }
+        public int IsInBond(Ball ball)
+        {
+            Span<Bond> bonds = _bonds.AsSpan();
+            for (int i = 0; i < bonds.Length; i++)
+            {
+                Bond b = bonds[i];
+                if (b.A == ball || b.B == ball) { return i; }
+            }
+            
+            return -1;
+        }
+        public void AddBond(Bond b)
+        {
+            AddBall(b.A);
+            AddBall(b.B);
+            _bonds.Add(b);
+        }
+        public void AddString(String c)
+        {
+            Ball lb = c.Balls[0];
+            for (int i = 1; i < c.Balls.Length; i++)
+            {
+                Ball b = c.Balls[i];
+                AddBond(new Bond(c.Length, lb, b, c.Elasticity));
+                lb = b;
             }
         }
         
         public void IterateBalls(Action<Ball> action)
         {
-            int l = _balls.Count;
-            for (int i = 0; i < l; i++)
+            Span<Ball> span = _balls.AsSpan();
+            for (int i = 0; i < span.Length; i++)
             {
-                action(_balls[i]);
+                action(span[i]);
             }
         }
         // public void IterateGrid(Action<List<Ball>, Vector2> action)

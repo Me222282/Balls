@@ -75,9 +75,9 @@ namespace Balls
             double hw = width * 0.5;
             double hh = height * 0.5;
             
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 40; i++)
             {
-                AddBall(_random.NextVector2(-hw, hw, -hh, hh));
+                AddObject(_random.NextVector2(-hw, hw, -hh, hh));
             }
             
             TR = new TextRenderer();
@@ -99,7 +99,7 @@ namespace Balls
             }
             else if (this[MouseButton.Left])
             {
-                AddBall(MouseLocation - (Size * 0.5) + (offset.X, -offset.Y));
+                AddObject(MouseLocation - (Size * 0.5) + (offset.X, -offset.Y));
             }
             
             base.OnUpdate(e);
@@ -152,7 +152,6 @@ namespace Balls
                 _phm.SetBoundPos(offset);
             });
         }
-
         public void AddBall(Vector2 location)
         {
             _phm.AddBall(new Ball(
@@ -161,6 +160,58 @@ namespace Balls
                 _random.NextVector2(-5d, 5d),
                 _random.NextColour3()
             ));
+        }
+        public void AddBond(Vector2 location)
+        {
+            Vector2 vel = _random.NextVector2(-5d, 5d);
+            Colour3 c = _random.NextColour3();
+            double r = _random.NextDouble(2d, PhysicsManager.GridSize * 0.5);
+            double dist = _random.NextDouble(2d * r, 3d * r);
+            
+            Vector2 dir = _random.NextVector2(-1d, 1d).Normalised();
+            Vector2 a = location + (dir * dist * 0.5);
+            Vector2 b = location - (dir * dist * 0.5);
+            
+            _phm.AddBond(new Bond(dist, 
+                new Ball(a, r, vel, c),
+                new Ball(b, r, vel, c), 1d));
+        }
+        public void AddString(Vector2 location)
+        {
+            Vector2 vel = _random.NextVector2(-5d, 5d);
+            Colour3 c = _random.NextColour3();
+            double e = _random.NextDouble(0.01, 0.7);
+            double r = _random.NextDouble(2d, PhysicsManager.GridSize * 0.5);
+            double dist = _random.NextDouble(2d * r, 2.5 * r);
+            int cp = _random.Next(2, 6);
+            
+            Span<Ball> span = new Ball[cp + 1];
+            span[0] = new Ball(location, r, vel, c);
+            Vector2 dir = _random.NextVector2(-1d, 1d).Normalised();
+            
+            for (int i = 1; i < cp + 1; i++)
+            {
+                location += dir * dist;
+                span[i] = new Ball(location, r, vel, c);
+            }
+            
+            _phm.AddString(new String(span, dist, e));
+        }
+        public void AddObject(Vector2 location)
+        {
+            int i = _random.Next(0, 3);
+            switch (i)
+            {
+                case 0:
+                    AddBall(location);
+                    return;
+                case 1:
+                    AddBond(location);
+                    return;
+                case 2:
+                    AddString(location);
+                    return;
+            }
         }
         
         protected override void OnKeyDown(KeyEventArgs e)
