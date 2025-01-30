@@ -8,6 +8,7 @@ layout(location = 5) in float radius;
 layout(location = 6) in vec3 colour;
 
 out vec4 pos_Colour;
+out vec2 tex_Coords;
 out vec2 pos;
 
 uniform mat4 matrix;

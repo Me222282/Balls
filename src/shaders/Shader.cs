@@ -1,5 +1,8 @@
+using System;
 using System.IO;
+using System.Text;
 using Zene.Graphics;
+using Zene.Graphics.Base;
 using Zene.Structs;
 
 namespace Balls
@@ -10,7 +13,7 @@ namespace Balls
         {
             Create(File.ReadAllText("./shaders/vertex.glsl"), ShaderPresets.CircleFrag, 1,
                 "colourType", "matrix", "radius", "minRadius");
-
+            
             SetUniform(Uniforms[1], Matrix4.Identity);
             SetUniform(Uniforms[0], (int)ColourSource.AttributeColour);
             

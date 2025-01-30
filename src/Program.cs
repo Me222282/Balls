@@ -280,7 +280,7 @@ namespace Balls
         {
             // AddBall(location);
             
-            int i = _random.Next(0, 3);
+            int i = _random.Next(0, 2);
             switch (i)
             {
                 case 0:
@@ -289,9 +289,9 @@ namespace Balls
                 case 1:
                     AddBond(location);
                     return;
-                case 2:
-                    AddString(location);
-                    return;
+                // case 2:
+                //     AddString(location);
+                //     return;
             }
         }
         

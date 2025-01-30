@@ -106,18 +106,18 @@ namespace Balls
             CalculateCollisions();
             
             // Program.ParallelFor(l, 1, i =>
-            Parallel.For(0, (int)_balls.Length, i =>
-            {
-                Ball b = _balls[i];
-                b.ApplyVerlet(dt);
-            });
-            
-            // Span<Ball> span = _balls.AsSpan();
-            // for (int i = 0; i < span.Length; i++)
+            // Parallel.For(0, (int)_balls.Length, i =>
             // {
-            //     Ball b = span[i];
+            //     Ball b = _balls[i];
             //     b.ApplyVerlet(dt);
-            // }
+            // });
+            
+            Span<Ball> span = _balls.AsSpan();
+            for (int i = 0; i < span.Length; i++)
+            {
+                Ball b = span[i];
+                b.ApplyVerlet(dt);
+            }
         }
         
         private void PreCollisionPhsyics()
@@ -228,8 +228,8 @@ namespace Balls
             //     }
             // });
             
-            Parallel.For(1, size.X, x =>
-            // for (int z = 0; z < size.X - 1; z++)
+            // Parallel.For(1, size.X, x =>
+            for (int x = 1; x < size.X; x++)
             {
                 // int x = z;
                 ReadOnlySpan<Ball> a = new ReadOnlySpan<Ball>(),
@@ -268,7 +268,7 @@ namespace Balls
                     Iterate(b1, d);
                     Iterate(b1, e);
                 }
-            });
+            }//);
         }
         private void Iterate(Ball b1, Vector2I p)
         {
